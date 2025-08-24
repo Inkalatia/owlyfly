@@ -199,7 +199,7 @@ const engine = new Engine(GODOT_CONFIG);
 		statusProgress.removeAttribute('value');
 		statusProgress.removeAttribute('max');
 		
-		const chunkBlobs = [];
+		const chunkBuffers = [];
 		const totalChunks = chunkList.length;
 		
 		for (let i = 0; i < totalChunks; i++) {
@@ -219,8 +219,8 @@ const engine = new Engine(GODOT_CONFIG);
 					throw new Error(`Failed to download ${chunkType} chunk: ${chunkList[i]}. Status: ${response.status} ${response.statusText}`);
 				}
 				
-				const blob = await response.blob();
-				chunkBlobs.push(blob);
+				const buffer = await response.arrayBuffer();
+				chunkBuffers.push(buffer);
 				console.log(`Successfully downloaded ${chunkType} chunk ${i+1}/${totalChunks}: ${chunkList[i]}`);
 				
 			} catch (error) {
@@ -229,10 +229,18 @@ const engine = new Engine(GODOT_CONFIG);
 			}
 		}
 		
-		// Combine all chunks into a single blob
-		const blobType = chunkType === 'wasm' ? 'application/wasm' : 'application/octet-stream';
-		console.log(`Combining ${chunkBlobs.length} chunks into a single blob`);
-		return new Blob(chunkBlobs, { type: blobType });
+		// Combine all chunks into a single ArrayBuffer
+		console.log(`Combining ${chunkBuffers.length} chunks into a single ArrayBuffer`);
+		const totalLength = chunkBuffers.reduce((acc, buffer) => acc + buffer.byteLength, 0);
+		const combinedBuffer = new Uint8Array(totalLength);
+		
+		let offset = 0;
+		for (const buffer of chunkBuffers) {
+			combinedBuffer.set(new Uint8Array(buffer), offset);
+			offset += buffer.byteLength;
+		}
+		
+		return combinedBuffer.buffer;
 	}
 	
 	// Check for missing features first
@@ -273,21 +281,19 @@ const engine = new Engine(GODOT_CONFIG);
 		
 		// Load and combine wasm chunks from same origin
 		console.log('Loading and assembling wasm chunks...');
-		const combinedWasmBlob = await loadAndCombineChunks(wasmChunks, 'wasm');
-		const wasmBlobUrl = URL.createObjectURL(combinedWasmBlob);
-		console.log("Wasm Blob URL created:", wasmBlobUrl);
+		const wasmArrayBuffer = await loadAndCombineChunks(wasmChunks, 'wasm');
+		console.log("Wasm ArrayBuffer obtained");
 		
 		// Load and combine pck chunks from same origin
 		console.log('Loading and assembling pck chunks...');
-		const combinedPckBlob = await loadAndCombineChunks(pckChunks, 'pck');
-		const pckBlobUrl = URL.createObjectURL(combinedPckBlob);
-		console.log("PCK Blob URL created:", pckBlobUrl);
+		const pckArrayBuffer = await loadAndCombineChunks(pckChunks, 'pck');
+		console.log("PCK ArrayBuffer obtained");
 		
 		console.log("About to call engine.startGame...");
-		// Start the game with resources
+		// Start the game with ArrayBuffers instead of blob URLs
 		await engine.startGame({
-			'executable': wasmBlobUrl,
-			'mainPack': pckBlobUrl,
+			'executable': wasmArrayBuffer,
+			'mainPack': pckArrayBuffer,
 			'onProgress': function(current, total) {
 				if (current > 0 && total > 0) {
 					statusProgress.value = current;
@@ -305,6 +311,6 @@ const engine = new Engine(GODOT_CONFIG);
 		displayFailureNotice(error);
 	}
 })();
-		</script>
+</script>
 	</body>
 </html>
