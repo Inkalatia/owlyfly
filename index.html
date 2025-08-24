@@ -122,19 +122,31 @@ const engine = new Engine(GODOT_CONFIG);
 
 // Custom loading logic for jsDelivr
 (async function() {
-	// Set up CDN configuration - REPLACE WITH YOUR DETAILS
+	// Set up CDN configuration
 	const userName = "Inkalatia";    // Your GitHub username
 	const repoName = "owlyfly";      // Your repository name
 	const branch = "main";           // Your branch name
 	const baseUrl = `https://cdn.jsdelivr.net/gh/${userName}/${repoName}@${branch}/`;
 	
-	// List all pck chunks in order (based on your uploaded files)
+	// List all wasm chunks in order
+	const wasmChunks = [
+		'index.wasm.part.00',
+		'index.wasm.part.01'
+	];
+	
+	// List all pck chunks in order
 	const pckChunks = [
 		'index.pck.part.00',
 		'index.pck.part.01',
 		'index.pck.part.02',
 		'index.pck.part.03',
-		'index.pck.part.04'
+		'index.pck.part.04',
+		'index.pck.part.05',
+		'index.pck.part.06',
+		'index.pck.part.07',
+		'index.pck.part.08',
+		'index.pck.part.09',
+		'index.pck.part.10'
 	];
 	
 	const statusOverlay = document.getElementById('status');
@@ -183,14 +195,14 @@ const engine = new Engine(GODOT_CONFIG);
 		initializing = false;
 	}
 	
-	// Function to download and combine all pck chunks
-	async function loadAndCombinePckChunks() {
+	// Function to download and combine chunks
+	async function loadAndCombineChunks(chunkList, chunkType) {
 		setStatusMode('progress');
 		statusProgress.removeAttribute('value');
 		statusProgress.removeAttribute('max');
 		
 		const chunkBlobs = [];
-		const totalChunks = pckChunks.length;
+		const totalChunks = chunkList.length;
 		
 		for (let i = 0; i < totalChunks; i++) {
 			try {
@@ -201,26 +213,27 @@ const engine = new Engine(GODOT_CONFIG);
 				}
 				
 				// Download chunk from jsDelivr
-				const chunkUrl = baseUrl + pckChunks[i];
-				console.log("Downloading chunk from jsDelivr:", chunkUrl);
+				const chunkUrl = baseUrl + chunkList[i];
+				console.log(`Downloading ${chunkType} chunk from jsDelivr:`, chunkUrl);
 				
 				const response = await fetch(chunkUrl);
 				if (!response.ok) {
-					throw new Error(`Failed to download chunk: ${pckChunks[i]} from ${chunkUrl}. Status: ${response.status} ${response.statusText}`);
+					throw new Error(`Failed to download ${chunkType} chunk: ${chunkList[i]} from ${chunkUrl}. Status: ${response.status} ${response.statusText}`);
 				}
 				
 				const blob = await response.blob();
 				chunkBlobs.push(blob);
-				console.log(`Successfully downloaded chunk ${i+1}/${totalChunks}: ${pckChunks[i]}`);
+				console.log(`Successfully downloaded ${chunkType} chunk ${i+1}/${totalChunks}: ${chunkList[i]}`);
 				
 			} catch (error) {
-				console.error("Error downloading chunk:", error);
+				console.error(`Error downloading ${chunkType} chunk:`, error);
 				throw error;
 			}
 		}
 		
 		// Combine all chunks into a single blob
-		return new Blob(chunkBlobs, { type: 'application/octet-stream' });
+		const blobType = chunkType === 'wasm' ? 'application/wasm' : 'application/octet-stream';
+		return new Blob(chunkBlobs, { type: blobType });
 	}
 	
 	// Check for missing features first
@@ -259,14 +272,20 @@ const engine = new Engine(GODOT_CONFIG);
 	try {
 		setStatusMode('progress');
 		
+		// Load and combine wasm chunks from jsDelivr
+		console.log('Loading and assembling wasm chunks...');
+		const combinedWasmBlob = await loadAndCombineChunks(wasmChunks, 'wasm');
+		const wasmBlobUrl = URL.createObjectURL(combinedWasmBlob);
+		
 		// Load and combine pck chunks from jsDelivr
-		const combinedPckBlob = await loadAndCombinePckChunks();
+		console.log('Loading and assembling pck chunks...');
+		const combinedPckBlob = await loadAndCombineChunks(pckChunks, 'pck');
 		const pckBlobUrl = URL.createObjectURL(combinedPckBlob);
 		
 		// Start the game with resources from CDN
 		await engine.startGame({
-			'executable': baseUrl + 'index.wasm', // Load .wasm from jsDelivr
-			'mainPack': pckBlobUrl, // Use the combined blob for .pck
+			'executable': wasmBlobUrl, // Use the combined wasm blob
+			'mainPack': pckBlobUrl, // Use the combined pck blob
 			'onProgress': function(current, total) {
 				if (current > 0 && total > 0) {
 					statusProgress.value = current;
