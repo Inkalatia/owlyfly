@@ -120,20 +120,11 @@ const GODOT_CONFIG = {
 const GODOT_THREADS_ENABLED = true;
 const engine = new Engine(GODOT_CONFIG);
 
-// Custom loading logic for jsDelivr
+// Custom loading logic
 (async function() {
-	// Set up CDN configuration
-	const userName = "Inkalatia";    // Your GitHub username
-	const repoName = "owlyfly";      // Your repository name
-	const branch = "main";           // Your branch name
-	const baseUrl = `https://raw.githubusercontent.com/Inkalatia/owlyfly/main/`;
-	
-	// List all wasm chunks in order
-	const wasmChunks = [
-		'index.wasm.part.00',
-		'index.wasm.part.01'
-	];
-	
+	// Use relative paths for same-origin loading
+	const baseUrl = './'; // Load from the same directory as the HTML file
+
 	// List all pck chunks in order
 	const pckChunks = [
 		'index.pck.part.00',
@@ -147,6 +138,12 @@ const engine = new Engine(GODOT_CONFIG);
 		'index.pck.part.08',
 		'index.pck.part.09',
 		'index.pck.part.10'
+	];
+	
+	// List all wasm chunks in order
+	const wasmChunks = [
+		'index.wasm.part.00',
+		'index.wasm.part.01'
 	];
 	
 	const statusOverlay = document.getElementById('status');
@@ -195,8 +192,9 @@ const engine = new Engine(GODOT_CONFIG);
 		initializing = false;
 	}
 	
-	// Function to download and combine chunks
+	// Function to download and combine chunks from the same origin
 	async function loadAndCombineChunks(chunkList, chunkType) {
+		console.log(`Starting to load ${chunkList.length} ${chunkType} chunks`);
 		setStatusMode('progress');
 		statusProgress.removeAttribute('value');
 		statusProgress.removeAttribute('max');
@@ -212,13 +210,13 @@ const engine = new Engine(GODOT_CONFIG);
 					statusProgress.max = totalChunks;
 				}
 				
-				// Download chunk from jsDelivr
+				// Download chunk from same origin
 				const chunkUrl = baseUrl + chunkList[i];
-				console.log(`Downloading ${chunkType} chunk from jsDelivr:`, chunkUrl);
+				console.log(`Downloading ${chunkType} chunk:`, chunkUrl);
 				
 				const response = await fetch(chunkUrl);
 				if (!response.ok) {
-					throw new Error(`Failed to download ${chunkType} chunk: ${chunkList[i]} from ${chunkUrl}. Status: ${response.status} ${response.statusText}`);
+					throw new Error(`Failed to download ${chunkType} chunk: ${chunkList[i]}. Status: ${response.status} ${response.statusText}`);
 				}
 				
 				const blob = await response.blob();
@@ -233,6 +231,7 @@ const engine = new Engine(GODOT_CONFIG);
 		
 		// Combine all chunks into a single blob
 		const blobType = chunkType === 'wasm' ? 'application/wasm' : 'application/octet-stream';
+		console.log(`Combining ${chunkBlobs.length} chunks into a single blob`);
 		return new Blob(chunkBlobs, { type: blobType });
 	}
 	
@@ -272,20 +271,23 @@ const engine = new Engine(GODOT_CONFIG);
 	try {
 		setStatusMode('progress');
 		
-		// Load and combine wasm chunks from jsDelivr
+		// Load and combine wasm chunks from same origin
 		console.log('Loading and assembling wasm chunks...');
 		const combinedWasmBlob = await loadAndCombineChunks(wasmChunks, 'wasm');
 		const wasmBlobUrl = URL.createObjectURL(combinedWasmBlob);
+		console.log("Wasm Blob URL created:", wasmBlobUrl);
 		
-		// Load and combine pck chunks from jsDelivr
+		// Load and combine pck chunks from same origin
 		console.log('Loading and assembling pck chunks...');
 		const combinedPckBlob = await loadAndCombineChunks(pckChunks, 'pck');
 		const pckBlobUrl = URL.createObjectURL(combinedPckBlob);
+		console.log("PCK Blob URL created:", pckBlobUrl);
 		
-		// Start the game with resources from CDN
+		console.log("About to call engine.startGame...");
+		// Start the game with resources
 		await engine.startGame({
-			'executable': wasmBlobUrl, // Use the combined wasm blob
-			'mainPack': pckBlobUrl, // Use the combined pck blob
+			'executable': wasmBlobUrl,
+			'mainPack': pckBlobUrl,
 			'onProgress': function(current, total) {
 				if (current > 0 && total > 0) {
 					statusProgress.value = current;
@@ -296,6 +298,7 @@ const engine = new Engine(GODOT_CONFIG);
 				}
 			},
 		});
+		console.log("engine.startGame finished!");
 		
 		setStatusMode('hidden');
 	} catch (error) {
