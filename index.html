@@ -104,20 +104,21 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-// Configuration for the Godot engine - Service Worker disabled
+// Configuration for the Godot engine - Adjusted for GitHub Pages limitations
 const GODOT_CONFIG = {
     "args": [],
     "canvasResizePolicy": 2,
-    "ensureCrossOriginIsolationHeaders": false, // Changed to false
+    "ensureCrossOriginIsolationHeaders": false, // Disabled for GitHub Pages
     "executable": "index",
     "experimentalVK": false,
     "fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
     "focusCanvas": true,
     "gdextensionLibs": [],
-    "serviceWorker": null // Explicitly set to null to disable
+    "serviceWorker": null // Disabled service worker
 };
 
-const GODOT_THREADS_ENABLED = true;
+const GODOT_THREADS_ENABLED = false; // Disabled threads due to GitHub Pages limitations
+
 const engine = new Engine(GODOT_CONFIG);
 
 // Custom loading logic
@@ -248,10 +249,16 @@ const engine = new Engine(GODOT_CONFIG);
         threads: GODOT_THREADS_ENABLED,
     });
     
-    if (missing.length !== 0) {
-        // Display the message as usual - no service worker handling
+    // Filter out the missing features that we can't fix on GitHub Pages
+    const filteredMissing = missing.filter(feature => 
+        !feature.includes('Cross-Origin Isolation') && 
+        !feature.includes('SharedArrayBuffer')
+    );
+    
+    if (filteredMissing.length !== 0) {
+        // Display the message for features we can't work around
         const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
-        displayFailureNotice(missingMsg + missing.join('\n'));
+        displayFailureNotice(missingMsg + filteredMissing.join('\n'));
         return;
     }
     
