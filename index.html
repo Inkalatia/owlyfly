@@ -122,13 +122,13 @@ const engine = new Engine(GODOT_CONFIG);
 
 // Custom loading logic for jsDelivr
 (async function() {
-	// Set up CDN configuration
+	// Set up CDN configuration - REPLACE WITH YOUR DETAILS
 	const userName = "Inkalatia";    // Your GitHub username
 	const repoName = "owlyfly";      // Your repository name
 	const branch = "main";           // Your branch name
 	const baseUrl = `https://cdn.jsdelivr.net/gh/${userName}/${repoName}@${branch}/`;
 	
-	// List all pck chunks in order
+	// List all pck chunks in order (based on your uploaded files)
 	const pckChunks = [
 		'index.pck.part.00',
 		'index.pck.part.01',
@@ -200,17 +200,18 @@ const engine = new Engine(GODOT_CONFIG);
 					statusProgress.max = totalChunks;
 				}
 				
-				// Download chunk
+				// Download chunk from jsDelivr
 				const chunkUrl = baseUrl + pckChunks[i];
-				console.log("Downloading chunk:", chunkUrl);
+				console.log("Downloading chunk from jsDelivr:", chunkUrl);
 				
 				const response = await fetch(chunkUrl);
 				if (!response.ok) {
-					throw new Error(`Failed to download chunk: ${pckChunks[i]}`);
+					throw new Error(`Failed to download chunk: ${pckChunks[i]} from ${chunkUrl}. Status: ${response.status} ${response.statusText}`);
 				}
 				
 				const blob = await response.blob();
 				chunkBlobs.push(blob);
+				console.log(`Successfully downloaded chunk ${i+1}/${totalChunks}: ${pckChunks[i]}`);
 				
 			} catch (error) {
 				console.error("Error downloading chunk:", error);
@@ -258,14 +259,14 @@ const engine = new Engine(GODOT_CONFIG);
 	try {
 		setStatusMode('progress');
 		
-		// Load and combine pck chunks
+		// Load and combine pck chunks from jsDelivr
 		const combinedPckBlob = await loadAndCombinePckChunks();
 		const pckBlobUrl = URL.createObjectURL(combinedPckBlob);
 		
 		// Start the game with resources from CDN
 		await engine.startGame({
-			'executable': baseUrl + 'index.wasm',
-			'mainPack': pckBlobUrl,
+			'executable': baseUrl + 'index.wasm', // Load .wasm from jsDelivr
+			'mainPack': pckBlobUrl, // Use the combined blob for .pck
 			'onProgress': function(current, total) {
 				if (current > 0 && total > 0) {
 					statusProgress.value = current;
