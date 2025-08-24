@@ -104,17 +104,17 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-// Configuration for the Godot engine
+// Configuration for the Godot engine - Service Worker disabled
 const GODOT_CONFIG = {
-	"args": [],
-	"canvasResizePolicy": 2,
-	"ensureCrossOriginIsolationHeaders": true,
-	"executable": "index",
-	"experimentalVK": false,
-	"fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
-	"focusCanvas": true,
-	"gdextensionLibs": [],
-	"serviceWorker": null,
+    "args": [],
+    "canvasResizePolicy": 2,
+    "ensureCrossOriginIsolationHeaders": false, // Changed to false
+    "executable": "index",
+    "experimentalVK": false,
+    "fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
+    "focusCanvas": true,
+    "gdextensionLibs": [],
+    "serviceWorker": null // Explicitly set to null to disable
 };
 
 const GODOT_THREADS_ENABLED = true;
@@ -122,208 +122,188 @@ const engine = new Engine(GODOT_CONFIG);
 
 // Custom loading logic
 (async function() {
-	// Use relative paths for same-origin loading
-	const baseUrl = './'; // Load from the same directory as the HTML file
+    // Use relative paths for same-origin loading
+    const baseUrl = './'; // Load from the same directory as the HTML file
 
-	// List all pck chunks in order
-	const pckChunks = [
-		'index.pck.part.00',
-		'index.pck.part.01',
-		'index.pck.part.02',
-		'index.pck.part.03',
-		'index.pck.part.04',
-		'index.pck.part.05',
-		'index.pck.part.06',
-		'index.pck.part.07',
-		'index.pck.part.08',
-		'index.pck.part.09',
-		'index.pck.part.10'
-	];
-	
-	// List all wasm chunks in order
-	const wasmChunks = [
-		'index.wasm.part.00',
-		'index.wasm.part.01'
-	];
-	
-	const statusOverlay = document.getElementById('status');
-	const statusProgress = document.getElementById('status-progress');
-	const statusNotice = document.getElementById('status-notice');
-	
-	let initializing = true;
-	let statusMode = '';
-	
-	function setStatusMode(mode) {
-		if (statusMode === mode || !initializing) return;
-		
-		if (mode === 'hidden') {
-			statusOverlay.remove();
-			initializing = false;
-			return;
-		}
-		
-		statusOverlay.style.visibility = 'visible';
-		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
-		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
-		statusMode = mode;
-	}
-	
-	function setStatusNotice(text) {
-		while (statusNotice.lastChild) {
-			statusNotice.removeChild(statusNotice.lastChild);
-		}
-		const lines = text.split('\n');
-		lines.forEach((line) => {
-			statusNotice.appendChild(document.createTextNode(line));
-			statusNotice.appendChild(document.createElement('br'));
-		});
-	}
-	
-	function displayFailureNotice(err) {
-		console.error(err);
-		if (err instanceof Error) {
-			setStatusNotice(err.message);
-		} else if (typeof err === 'string') {
-			setStatusNotice(err);
-		} else {
-			setStatusNotice('An unknown error occurred');
-		}
-		setStatusMode('notice');
-		initializing = false;
-	}
-	
-	// Function to download and combine chunks from the same origin
-	async function loadAndCombineChunks(chunkList, chunkType) {
-		console.log(`Starting to load ${chunkList.length} ${chunkType} chunks`);
-		setStatusMode('progress');
-		statusProgress.removeAttribute('value');
-		statusProgress.removeAttribute('max');
-		
-		const chunkBuffers = [];
-		const totalChunks = chunkList.length;
-		
-		for (let i = 0; i < totalChunks; i++) {
-			try {
-				// Update progress
-				if (statusProgress) {
-					statusProgress.value = i;
-					statusProgress.max = totalChunks;
-				}
-				
-				// Download chunk from same origin
-				const chunkUrl = baseUrl + chunkList[i];
-				console.log(`Downloading ${chunkType} chunk:`, chunkUrl);
-				
-				const response = await fetch(chunkUrl);
-				if (!response.ok) {
-					throw new Error(`Failed to download ${chunkType} chunk: ${chunkList[i]}. Status: ${response.status} ${response.statusText}`);
-				}
-				
-				const buffer = await response.arrayBuffer();
-				chunkBuffers.push(buffer);
-				console.log(`Successfully downloaded ${chunkType} chunk ${i+1}/${totalChunks}: ${chunkList[i]}`);
-				
-			} catch (error) {
-				console.error(`Error downloading ${chunkType} chunk:`, error);
-				throw error;
-			}
-		}
-		
-		// Combine all chunks into a single ArrayBuffer
-		console.log(`Combining ${chunkBuffers.length} chunks into a single ArrayBuffer`);
-		const totalLength = chunkBuffers.reduce((acc, buffer) => acc + buffer.byteLength, 0);
-		const combinedBuffer = new Uint8Array(totalLength);
-		
-		let offset = 0;
-		for (const buffer of chunkBuffers) {
-			combinedBuffer.set(new Uint8Array(buffer), offset);
-			offset += buffer.byteLength;
-		}
-		
-		return combinedBuffer.buffer;
-	}
-	
-	// Check for missing features first
-	const missing = Engine.getMissingFeatures({
-		threads: GODOT_THREADS_ENABLED,
-	});
-	
-	if (missing.length !== 0) {
-		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
-			// There's a chance that installing the service worker would fix the issue
-			Promise.race([
-				navigator.serviceWorker.getRegistration().then((registration) => {
-					if (registration != null) {
-						return Promise.reject(new Error('Service worker already exists.'));
-					}
-					return registration;
-				}).then(() => engine.installServiceWorker()),
-				// For some reason, `getRegistration()` can stall
-				new Promise((resolve) => {
-					setTimeout(() => resolve(), 2000);
-				}),
-			]).catch((err) => {
-				console.error('Error while registering service worker:', err);
-			}).then(() => {
-				window.location.reload();
-			});
-		} else {
-			// Display the message as usual
-			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
-			displayFailureNotice(missingMsg + missing.join('\n'));
-		}
-		return;
-	}
-	
-	// Load the game
-	try {
-		setStatusMode('progress');
-		
-		// Load and combine wasm chunks from same origin
-		console.log('Loading and assembling wasm chunks...');
-		const wasmArrayBuffer = await loadAndCombineChunks(wasmChunks, 'wasm');
-		console.log("Wasm ArrayBuffer obtained");
-		
-		// Load and combine pck chunks from same origin
-		console.log('Loading and assembling pck chunks...');
-		const pckArrayBuffer = await loadAndCombineChunks(pckChunks, 'pck');
-		console.log("PCK ArrayBuffer obtained");
-		
-		console.log("About to call engine.startGame...");
-		
-		// Create a simple function to preload files into memory
-		function preloadFile(filename, arrayBuffer) {
-			return new Promise((resolve) => {
-				// Create a virtual file in memory
-				FS.createPreloadedFile('/', filename, arrayBuffer, true, true, () => {
-					console.log(`Preloaded ${filename} into memory`);
-					resolve();
-				});
-			});
-		}
-		
-		// Preload the wasm and pck files into memory
-		await preloadFile('index.wasm', wasmArrayBuffer);
-		await preloadFile('index.pck', pckArrayBuffer);
-		
-		// Start the game - it will use the files we preloaded into memory
-		await engine.startGame({
-			'onProgress': function(current, total) {
-				if (current > 0 && total > 0) {
-					statusProgress.value = current;
-					statusProgress.max = total;
-				} else {
-					statusProgress.removeAttribute('value');
-					statusProgress.removeAttribute('max');
-				}
-			},
-		});
-		console.log("engine.startGame finished!");
-		
-		setStatusMode('hidden');
-	} catch (error) {
-		displayFailureNotice(error);
-	}
+    // List all pck chunks in order
+    const pckChunks = [
+        'index.pck.part.00',
+        'index.pck.part.01',
+        'index.pck.part.02',
+        'index.pck.part.03',
+        'index.pck.part.04',
+        'index.pck.part.05',
+        'index.pck.part.06',
+        'index.pck.part.07',
+        'index.pck.part.08',
+        'index.pck.part.09',
+        'index.pck.part.10'
+    ];
+    
+    // List all wasm chunks in order
+    const wasmChunks = [
+        'index.wasm.part.00',
+        'index.wasm.part.01'
+    ];
+    
+    const statusOverlay = document.getElementById('status');
+    const statusProgress = document.getElementById('status-progress');
+    const statusNotice = document.getElementById('status-notice');
+    
+    let initializing = true;
+    let statusMode = '';
+    
+    function setStatusMode(mode) {
+        if (statusMode === mode || !initializing) return;
+        
+        if (mode === 'hidden') {
+            statusOverlay.remove();
+            initializing = false;
+            return;
+        }
+        
+        statusOverlay.style.visibility = 'visible';
+        statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+        statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+        statusMode = mode;
+    }
+    
+    function setStatusNotice(text) {
+        while (statusNotice.lastChild) {
+            statusNotice.removeChild(statusNotice.lastChild);
+        }
+        const lines = text.split('\n');
+        lines.forEach((line) => {
+            statusNotice.appendChild(document.createTextNode(line));
+            statusNotice.appendChild(document.createElement('br'));
+        });
+    }
+    
+    function displayFailureNotice(err) {
+        console.error(err);
+        if (err instanceof Error) {
+            setStatusNotice(err.message);
+        } else if (typeof err === 'string') {
+            setStatusNotice(err);
+        } else {
+            setStatusNotice('An unknown error occurred');
+        }
+        setStatusMode('notice');
+        initializing = false;
+    }
+    
+    // Function to download and combine chunks from the same origin
+    async function loadAndCombineChunks(chunkList, chunkType) {
+        console.log(`Starting to load ${chunkList.length} ${chunkType} chunks`);
+        setStatusMode('progress');
+        statusProgress.removeAttribute('value');
+        statusProgress.removeAttribute('max');
+        
+        const chunkBuffers = [];
+        const totalChunks = chunkList.length;
+        
+        for (let i = 0; i < totalChunks; i++) {
+            try {
+                // Update progress
+                if (statusProgress) {
+                    statusProgress.value = i;
+                    statusProgress.max = totalChunks;
+                }
+                
+                // Download chunk from same origin
+                const chunkUrl = baseUrl + chunkList[i];
+                console.log(`Downloading ${chunkType} chunk:`, chunkUrl);
+                
+                const response = await fetch(chunkUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to download ${chunkType} chunk: ${chunkList[i]}. Status: ${response.status} ${response.statusText}`);
+                }
+                
+                const buffer = await response.arrayBuffer();
+                chunkBuffers.push(buffer);
+                console.log(`Successfully downloaded ${chunkType} chunk ${i+1}/${totalChunks}: ${chunkList[i]}`);
+                
+            } catch (error) {
+                console.error(`Error downloading ${chunkType} chunk:`, error);
+                throw error;
+            }
+        }
+        
+        // Combine all chunks into a single ArrayBuffer
+        console.log(`Combining ${chunkBuffers.length} chunks into a single ArrayBuffer`);
+        const totalLength = chunkBuffers.reduce((acc, buffer) => acc + buffer.byteLength, 0);
+        const combinedBuffer = new Uint8Array(totalLength);
+        
+        let offset = 0;
+        for (const buffer of chunkBuffers) {
+            combinedBuffer.set(new Uint8Array(buffer), offset);
+            offset += buffer.byteLength;
+        }
+        
+        return combinedBuffer.buffer;
+    }
+    
+    // Check for missing features first
+    const missing = Engine.getMissingFeatures({
+        threads: GODOT_THREADS_ENABLED,
+    });
+    
+    if (missing.length !== 0) {
+        // Display the message as usual - no service worker handling
+        const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+        displayFailureNotice(missingMsg + missing.join('\n'));
+        return;
+    }
+    
+    // Load the game
+    try {
+        setStatusMode('progress');
+        
+        // Load and combine wasm chunks from same origin
+        console.log('Loading and assembling wasm chunks...');
+        const wasmArrayBuffer = await loadAndCombineChunks(wasmChunks, 'wasm');
+        console.log("Wasm ArrayBuffer obtained");
+        
+        // Load and combine pck chunks from same origin
+        console.log('Loading and assembling pck chunks...');
+        const pckArrayBuffer = await loadAndCombineChunks(pckChunks, 'pck');
+        console.log("PCK ArrayBuffer obtained");
+        
+        console.log("About to call engine.startGame...");
+        
+        // Create a simple function to preload files into memory
+        function preloadFile(filename, arrayBuffer) {
+            return new Promise((resolve) => {
+                // Create a virtual file in memory
+                FS.createPreloadedFile('/', filename, arrayBuffer, true, true, () => {
+                    console.log(`Preloaded ${filename} into memory`);
+                    resolve();
+                });
+            });
+        }
+        
+        // Preload the wasm and pck files into memory
+        await preloadFile('index.wasm', wasmArrayBuffer);
+        await preloadFile('index.pck', pckArrayBuffer);
+        
+        // Start the game - it will use the files we preloaded into memory
+        await engine.startGame({
+            'onProgress': function(current, total) {
+                if (current > 0 && total > 0) {
+                    statusProgress.value = current;
+                    statusProgress.max = total;
+                } else {
+                    statusProgress.removeAttribute('value');
+                    statusProgress.removeAttribute('max');
+                }
+            },
+        });
+        console.log("engine.startGame finished!");
+        
+        setStatusMode('hidden');
+    } catch (error) {
+        displayFailureNotice(error);
+    }
 })();
 </script>
 	</body>
