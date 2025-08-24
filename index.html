@@ -104,33 +104,61 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":203326128,"index.wasm":33829596},"focusCanvas":true,"gdextensionLibs":[],"serviceWorker":"index.service.worker.js"};
+// Configuration for the Godot engine
+const GODOT_CONFIG = {
+	"args": [],
+	"canvasResizePolicy": 2,
+	"ensureCrossOriginIsolationHeaders": true,
+	"executable": "index",
+	"experimentalVK": false,
+	"fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
+	"focusCanvas": true,
+	"gdextensionLibs": [],
+	"serviceWorker": "index.service.worker.js"
+};
+
 const GODOT_THREADS_ENABLED = true;
 const engine = new Engine(GODOT_CONFIG);
 
-(function () {
+// Custom loading logic for jsDelivr
+(async function() {
+	// Set up CDN configuration
+	const userName = "Inkalatia";    // Your GitHub username
+	const repoName = "owlyfly";      // Your repository name
+	const branch = "main";           // Your branch name
+	const baseUrl = `https://cdn.jsdelivr.net/gh/${userName}/${repoName}@${branch}/`;
+	
+	// List all pck chunks in order
+	const pckChunks = [
+		'index.pck.part.00',
+		'index.pck.part.01',
+		'index.pck.part.02',
+		'index.pck.part.03',
+		'index.pck.part.04'
+	];
+	
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
 	const statusNotice = document.getElementById('status-notice');
-
+	
 	let initializing = true;
 	let statusMode = '';
-
+	
 	function setStatusMode(mode) {
-		if (statusMode === mode || !initializing) {
-			return;
-		}
+		if (statusMode === mode || !initializing) return;
+		
 		if (mode === 'hidden') {
 			statusOverlay.remove();
 			initializing = false;
 			return;
 		}
+		
 		statusOverlay.style.visibility = 'visible';
 		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
 		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
 		statusMode = mode;
 	}
-
+	
 	function setStatusNotice(text) {
 		while (statusNotice.lastChild) {
 			statusNotice.removeChild(statusNotice.lastChild);
@@ -141,7 +169,7 @@ const engine = new Engine(GODOT_CONFIG);
 			statusNotice.appendChild(document.createElement('br'));
 		});
 	}
-
+	
 	function displayFailureNotice(err) {
 		console.error(err);
 		if (err instanceof Error) {
@@ -149,16 +177,56 @@ const engine = new Engine(GODOT_CONFIG);
 		} else if (typeof err === 'string') {
 			setStatusNotice(err);
 		} else {
-			setStatusNotice('An unknown error occured');
+			setStatusNotice('An unknown error occurred');
 		}
 		setStatusMode('notice');
 		initializing = false;
 	}
-
+	
+	// Function to download and combine all pck chunks
+	async function loadAndCombinePckChunks() {
+		setStatusMode('progress');
+		statusProgress.removeAttribute('value');
+		statusProgress.removeAttribute('max');
+		
+		const chunkBlobs = [];
+		const totalChunks = pckChunks.length;
+		
+		for (let i = 0; i < totalChunks; i++) {
+			try {
+				// Update progress
+				if (statusProgress) {
+					statusProgress.value = i;
+					statusProgress.max = totalChunks;
+				}
+				
+				// Download chunk
+				const chunkUrl = baseUrl + pckChunks[i];
+				console.log("Downloading chunk:", chunkUrl);
+				
+				const response = await fetch(chunkUrl);
+				if (!response.ok) {
+					throw new Error(`Failed to download chunk: ${pckChunks[i]}`);
+				}
+				
+				const blob = await response.blob();
+				chunkBlobs.push(blob);
+				
+			} catch (error) {
+				console.error("Error downloading chunk:", error);
+				throw error;
+			}
+		}
+		
+		// Combine all chunks into a single blob
+		return new Blob(chunkBlobs, { type: 'application/octet-stream' });
+	}
+	
+	// Check for missing features first
 	const missing = Engine.getMissingFeatures({
 		threads: GODOT_THREADS_ENABLED,
 	});
-
+	
 	if (missing.length !== 0) {
 		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
 			// There's a chance that installing the service worker would fix the issue
@@ -183,10 +251,22 @@ const engine = new Engine(GODOT_CONFIG);
 			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
 			displayFailureNotice(missingMsg + missing.join('\n'));
 		}
-	} else {
+		return;
+	}
+	
+	// Load the game
+	try {
 		setStatusMode('progress');
-		engine.startGame({
-			'onProgress': function (current, total) {
+		
+		// Load and combine pck chunks
+		const combinedPckBlob = await loadAndCombinePckChunks();
+		const pckBlobUrl = URL.createObjectURL(combinedPckBlob);
+		
+		// Start the game with resources from CDN
+		await engine.startGame({
+			'executable': baseUrl + 'index.wasm',
+			'mainPack': pckBlobUrl,
+			'onProgress': function(current, total) {
 				if (current > 0 && total > 0) {
 					statusProgress.value = current;
 					statusProgress.max = total;
@@ -195,12 +275,13 @@ const engine = new Engine(GODOT_CONFIG);
 					statusProgress.removeAttribute('max');
 				}
 			},
-		}).then(() => {
-			setStatusMode('hidden');
-		}, displayFailureNotice);
+		});
+		
+		setStatusMode('hidden');
+	} catch (error) {
+		displayFailureNotice(error);
 	}
-}());
+})();
 		</script>
 	</body>
 </html>
-
