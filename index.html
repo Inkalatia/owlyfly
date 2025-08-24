@@ -284,16 +284,30 @@ const engine = new Engine(GODOT_CONFIG);
 		const wasmArrayBuffer = await loadAndCombineChunks(wasmChunks, 'wasm');
 		console.log("Wasm ArrayBuffer obtained");
 		
+		// Create a blob from the wasm ArrayBuffer with correct MIME type
+		const wasmBlob = new Blob([wasmArrayBuffer], { type: 'application/wasm' });
+		const wasmBlobUrl = URL.createObjectURL(wasmBlob);
+		console.log("Wasm Blob URL created:", wasmBlobUrl);
+		
 		// Load and combine pck chunks from same origin
 		console.log('Loading and assembling pck chunks...');
 		const pckArrayBuffer = await loadAndCombineChunks(pckChunks, 'pck');
 		console.log("PCK ArrayBuffer obtained");
 		
+		// Create a blob from the pck ArrayBuffer
+		const pckBlob = new Blob([pckArrayBuffer], { type: 'application/octet-stream' });
+		const pckBlobUrl = URL.createObjectURL(pckBlob);
+		console.log("PCK Blob URL created:", pckBlobUrl);
+		
 		console.log("About to call engine.startGame...");
-		// Start the game with ArrayBuffers instead of blob URLs
+		
+		// Add a small delay to ensure blobs are ready
+		await new Promise(resolve => setTimeout(resolve, 100));
+		
+		// Start the game with blob URLs
 		await engine.startGame({
-			'executable': wasmArrayBuffer,
-			'mainPack': pckArrayBuffer,
+			'executable': wasmBlobUrl,
+			'mainPack': pckBlobUrl,
 			'onProgress': function(current, total) {
 				if (current > 0 && total > 0) {
 					statusProgress.value = current;
@@ -305,6 +319,10 @@ const engine = new Engine(GODOT_CONFIG);
 			},
 		});
 		console.log("engine.startGame finished!");
+		
+		// Clean up blob URLs after the game has started
+		URL.revokeObjectURL(wasmBlobUrl);
+		URL.revokeObjectURL(pckBlobUrl);
 		
 		setStatusMode('hidden');
 	} catch (error) {
