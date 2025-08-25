@@ -231,44 +231,30 @@ const pckChunks = [
     }
 
     try {
-        // First, unregister any existing service workers
-        if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (const registration of registrations) {
-                await registration.unregister();
-                console.log('Unregistered service worker:', registration.scope);
-            }
+    // Unregister any existing service workers
+    if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+            await registration.unregister();
         }
-        
-        setStatusMode('progress');
-        console.log('Loading and assembling pck chunks from GitHub Pages...');
-        
-        // Download and combine pck chunks
-        const pckArrayBuffer = await loadAndCombineChunks(pckChunks, 'pck');
-        const pckBlob = new Blob([pckArrayBuffer], { type: 'application/octet-stream' });
-        const pckBlobUrl = URL.createObjectURL(pckBlob);
-
-        // Use GitHub's index.wasm directly, pass the combined pck Blob
-        await engine.startGame({
-            'executable': './index.wasm',
-            'mainPack': pckBlobUrl,
-            'onProgress': function(current, total) {
-                if (current > 0 && total > 0) {
-                    statusProgress.value = current;
-                    statusProgress.max = total;
-                } else {
-                    statusProgress.removeAttribute('value');
-                    statusProgress.removeAttribute('max');
-                }
-            },
-        });
-        
-        URL.revokeObjectURL(pckBlobUrl);
-        setStatusMode('hidden');
-    } catch (error) {
-        console.error('Failed to start game:', error);
-        displayFailureNotice('Failed to load the game. Please try refreshing the page. Error: ' + error.message);
     }
+    
+    // Start the game directly - let Godot handle the loading
+    await engine.startGame({
+        'onProgress': function(current, total) {
+            if (current > 0 && total > 0) {
+                statusProgress.value = current;
+                statusProgress.max = total;
+            } else {
+                statusProgress.removeAttribute('value');
+                statusProgress.removeAttribute('max');
+            }
+        },
+    });
+} catch (error) {
+    console.error('Failed to start game:', error);
+    displayFailureNotice('Failed to load the game. Please try refreshing the page. Error: ' + error.message);
+}
 })();
 </script>
 	</body>
