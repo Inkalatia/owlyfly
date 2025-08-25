@@ -85,7 +85,6 @@ body {
   src: url("./Ldfcomicsansbold-zgma.ttf");
 }
 		</style>
-		<!-- Remove custom.css reference to avoid 404 errors -->
 	</head>
 	<body>
 		<canvas id="canvas">
@@ -109,7 +108,7 @@ const GODOT_CONFIG = {
 	"args": [],
 	"canvasResizePolicy": 2,
 	"ensureCrossOriginIsolationHeaders": false, // Disabled for GitHub Pages
-	"executable": "index.wasm", // Use the actual filename
+	"executable": "index", // Use base name without extension
 	"experimentalVK": false,
 	"fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
 	"focusCanvas": true,
@@ -257,6 +256,16 @@ const engine = new Engine(GODOT_CONFIG);
 		return combinedBuffer.buffer;
 	}
 	
+	// Load WASM file directly
+	async function loadWasmFile() {
+		console.log('Loading WASM file...');
+		const response = await fetch('./index.wasm');
+		if (!response.ok) {
+			throw new Error(`Failed to load WASM file: ${response.status} ${response.statusText}`);
+		}
+		return await response.arrayBuffer();
+	}
+	
 	// Check for missing features first
 	const missing = Engine.getMissingFeatures({
 		threads: GODOT_THREADS_ENABLED,
@@ -284,10 +293,16 @@ const engine = new Engine(GODOT_CONFIG);
 		const pckBlobUrl = URL.createObjectURL(combinedPckBlob);
 		console.log("PCK Blob URL created");
 		
+		// Load WASM file
+		console.log('Loading WASM file...');
+		const wasmBuffer = await loadWasmFile();
+		const wasmBlob = new Blob([wasmBuffer], { type: 'application/wasm' });
+		const wasmBlobUrl = URL.createObjectURL(wasmBlob);
+		
 		console.log("About to call engine.startGame...");
-		// Start the game with resources - using the original wasm file and combined pck
+		// Start the game with resources - using blob URLs for both wasm and pck
 		await engine.startGame({
-			'executable': baseUrl + 'index.wasm', // Direct path to the wasm file
+			'executable': wasmBlobUrl,
 			'mainPack': pckBlobUrl,
 			'onProgress': function(current, total) {
 				if (current > 0 && total > 0) {
