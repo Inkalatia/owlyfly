@@ -125,7 +125,7 @@ const userName = "Inkalatia";
 const repoName = "owlyfly";
 const branch = "main";
 
-// Define pck file chunk list (adjust order and quantity based on your previously uploaded files)
+// Define pck file chunk list using GitHub RAW URLs instead of jsDelivr
 const pckChunks = [
     'index.pck.part.00',
     'index.pck.part.01',
@@ -138,7 +138,7 @@ const pckChunks = [
     'index.pck.part.08',
     'index.pck.part.09',
     'index.pck.part.10'
-].map(chunk => `https://cdn.jsdelivr.net/gh/${userName}/${repoName}@${branch}/${chunk}`);
+].map(chunk => `https://raw.githubusercontent.com/${userName}/${repoName}/${branch}/${chunk}`);
 
 // Custom loading logic
 (async function() {
@@ -189,32 +189,55 @@ const pckChunks = [
     }
     
     async function loadAndCombineChunks(chunkUrls, chunkType) {
+        console.log(`Starting to load ${chunkUrls.length} ${chunkType} chunks`);
+        setStatusMode('progress');
+        statusProgress.removeAttribute('value');
+        statusProgress.removeAttribute('max');
+        
         const chunkBuffers = [];
+        
         for (let i = 0; i < chunkUrls.length; i++) {
             try {
+                // Update progress
+                if (statusProgress) {
+                    statusProgress.value = i;
+                    statusProgress.max = chunkUrls.length;
+                }
+                
+                console.log(`Downloading ${chunkType} chunk:`, chunkUrls[i]);
+                
                 const response = await fetch(chunkUrls[i]);
-                if (!response.ok) throw new Error(`Failed to download ${chunkType} chunk ${i+1}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to download ${chunkType} chunk ${i+1}. Status: ${response.status} ${response.statusText}`);
+                }
+                
                 const buffer = await response.arrayBuffer();
                 chunkBuffers.push(buffer);
-                console.log(`Downloaded ${chunkType} chunk ${i+1}/${chunkUrls.length}`);
+                console.log(`Successfully downloaded ${chunkType} chunk ${i+1}/${chunkUrls.length}`);
+                
             } catch (error) {
                 console.error(`Error downloading chunk ${i+1}:`, error);
                 throw error;
             }
         }
+        
+        // Combine all chunks into a single ArrayBuffer
+        console.log(`Combining ${chunkBuffers.length} chunks into a single ArrayBuffer`);
         const totalLength = chunkBuffers.reduce((acc, buffer) => acc + buffer.byteLength, 0);
         const combinedBuffer = new Uint8Array(totalLength);
+        
         let offset = 0;
         for (const buffer of chunkBuffers) {
             combinedBuffer.set(new Uint8Array(buffer), offset);
             offset += buffer.byteLength;
         }
+        
         return combinedBuffer.buffer;
     }
 
     try {
         setStatusMode('progress');
-        console.log('Loading and assembling pck chunks from jsDelivr...');
+        console.log('Loading and assembling pck chunks from GitHub RAW...');
         
         // Only download and combine pck chunks
         const pckArrayBuffer = await loadAndCombineChunks(pckChunks, 'pck');
