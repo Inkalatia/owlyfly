@@ -104,28 +104,28 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-// 使用 GitHub Pages 直接加载 wasm，使用 jsDelivr CDN 加载 pck chunks
+// Configuration for the Godot engine
 const GODOT_CONFIG = {
     "args": [],
     "canvasResizePolicy": 2,
-    "ensureCrossOriginIsolationHeaders": false, // 在 GitHub Pages 上保持禁用
-    "executable": "index.wasm", // 直接使用 GitHub 上的文件
+    "ensureCrossOriginIsolationHeaders": false,
+    "executable": "index.wasm",
     "experimentalVK": false,
     "fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
     "focusCanvas": true,
     "gdextensionLibs": [],
-    "serviceWorker": null // 禁用 Service Worker
+    "serviceWorker": null
 };
 
-const GODOT_THREADS_ENABLED = false; // 在 GitHub Pages 上禁用线程
+const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
-// 配置：您的 GitHub 用户名、仓库名和分支名
+// Configuration: Your GitHub username, repository name and branch name
 const userName = "Inkalatia";
 const repoName = "owlyfly";
 const branch = "main";
 
-// 定义 pck 文件的分块列表（根据您之前上传的文件调整顺序和数量）
+// Define pck file chunk list (adjust order and quantity based on your previously uploaded files)
 const pckChunks = [
     'index.pck.part.00',
     'index.pck.part.01',
@@ -138,11 +138,56 @@ const pckChunks = [
     'index.pck.part.08',
     'index.pck.part.09',
     'index.pck.part.10'
-].map(chunk => `https://cdn.jsdelivr.net/gh/${userName}/${repoName}@${branch}/${chunk}`); // 映射为 jsDelivr 链接
+].map(chunk => `https://cdn.jsdelivr.net/gh/${userName}/${repoName}@${branch}/${chunk}`);
 
+// Custom loading logic
 (async function() {
-    // ... (保留您现有的 setStatusMode, displayFailureNotice 等函数) ...
-
+    const statusOverlay = document.getElementById('status');
+    const statusProgress = document.getElementById('status-progress');
+    const statusNotice = document.getElementById('status-notice');
+    
+    let initializing = true;
+    let statusMode = '';
+    
+    function setStatusMode(mode) {
+        if (statusMode === mode || !initializing) return;
+        
+        if (mode === 'hidden') {
+            statusOverlay.remove();
+            initializing = false;
+            return;
+        }
+        
+        statusOverlay.style.visibility = 'visible';
+        statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+        statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+        statusMode = mode;
+    }
+    
+    function setStatusNotice(text) {
+        while (statusNotice.lastChild) {
+            statusNotice.removeChild(statusNotice.lastChild);
+        }
+        const lines = text.split('\n');
+        lines.forEach((line) => {
+            statusNotice.appendChild(document.createTextNode(line));
+            statusNotice.appendChild(document.createElement('br'));
+        });
+    }
+    
+    function displayFailureNotice(err) {
+        console.error(err);
+        if (err instanceof Error) {
+            setStatusNotice(err.message);
+        } else if (typeof err === 'string') {
+            setStatusNotice(err);
+        } else {
+            setStatusNotice('An unknown error occurred');
+        }
+        setStatusMode('notice');
+        initializing = false;
+    }
+    
     async function loadAndCombineChunks(chunkUrls, chunkType) {
         const chunkBuffers = [];
         for (let i = 0; i < chunkUrls.length; i++) {
@@ -170,20 +215,28 @@ const pckChunks = [
     try {
         setStatusMode('progress');
         console.log('Loading and assembling pck chunks from jsDelivr...');
-        // 只下载和组合 pck chunks
+        
+        // Only download and combine pck chunks
         const pckArrayBuffer = await loadAndCombineChunks(pckChunks, 'pck');
         const pckBlob = new Blob([pckArrayBuffer], { type: 'application/octet-stream' });
         const pckBlobUrl = URL.createObjectURL(pckBlob);
 
-        // 直接使用 GitHub 上的 index.wasm，传递组合后的 pck Blob
+        // Use GitHub's index.wasm directly, pass the combined pck Blob
         await engine.startGame({
-            'executable': './index.wasm', // 相对路径指向 GitHub Pages 上的文件
-            'mainPack': pckBlobUrl, // 使用组合后的 pck Blob
+            'executable': './index.wasm', // Relative path points to the file on GitHub Pages
+            'mainPack': pckBlobUrl, // Use the combined pck Blob
             'onProgress': function(current, total) {
-                // ... (您的进度条代码) ...
+                if (current > 0 && total > 0) {
+                    statusProgress.value = current;
+                    statusProgress.max = total;
+                } else {
+                    statusProgress.removeAttribute('value');
+                    statusProgress.removeAttribute('max');
+                }
             },
         });
-        URL.revokeObjectURL(pckBlobUrl); // 清理
+        
+        URL.revokeObjectURL(pckBlobUrl); // Clean up
         setStatusMode('hidden');
     } catch (error) {
         console.error('Failed to start game:', error);
