@@ -85,7 +85,7 @@ body {
   src: url("./Ldfcomicsansbold-zgma.ttf");
 }
 		</style>
-		<link rel="stylesheet" href="./custom.css">
+		<!-- Remove or ensure custom.css exists to avoid 404 errors -->
 	</head>
 	<body>
 		<canvas id="canvas">
@@ -109,7 +109,7 @@ const GODOT_CONFIG = {
 	"args": [],
 	"canvasResizePolicy": 2,
 	"ensureCrossOriginIsolationHeaders": false, // Disabled for GitHub Pages compatibility
-	"executable": "./index.wasm", // Use direct path to the wasm file
+	"executable": "./index.wasm", // Direct path to the wasm file
 	"experimentalVK": false,
 	"fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
 	"focusCanvas": true,
@@ -288,7 +288,7 @@ const engine = new Engine(GODOT_CONFIG);
 		console.log("About to call engine.startGame...");
 		// Start the game with resources - using the original wasm file and combined pck
 		await engine.startGame({
-			'executable': baseUrl + 'index.wasm',
+			'executable': baseUrl + 'index.wasm', // Direct path to the wasm file
 			'mainPack': pckBlobUrl,
 			'onProgress': function(current, total) {
 				if (current > 0 && total > 0) {
