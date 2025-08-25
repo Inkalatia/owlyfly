@@ -85,7 +85,6 @@ body {
   src: url("./Ldfcomicsansbold-zgma.ttf");
 }
 		</style>
-		<!-- Remove or ensure custom.css exists to avoid 404 errors -->
 	</head>
 	<body>
 		<canvas id="canvas">
@@ -108,23 +107,21 @@ body {
 const GODOT_CONFIG = {
 	"args": [],
 	"canvasResizePolicy": 2,
-	"ensureCrossOriginIsolationHeaders": false, // Disabled for GitHub Pages compatibility
-	"executable": "./index.wasm", // Direct path to the wasm file
+	"ensureCrossOriginIsolationHeaders": false,
+	"executable": "index", // Use just the base name without extension
 	"experimentalVK": false,
 	"fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
 	"focusCanvas": true,
 	"gdextensionLibs": [],
-	"serviceWorker": null // Disable service worker for GitHub Pages
+	"serviceWorker": null
 };
 
-// Use single-threaded mode for better compatibility
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
 // Custom loading logic
 (async function() {
-	// Use relative paths for same-origin loading
-	const baseUrl = './'; // Load from the same directory as the HTML file
+	const baseUrl = './';
 
 	// List all pck chunks in order
 	const pckChunks = [
@@ -139,7 +136,7 @@ const engine = new Engine(GODOT_CONFIG);
 		'index.pck.part.08',
 		'index.pck.part.09',
 		'index.pck.part.10'
-	].map(chunk => baseUrl + chunk); // Prepend base URL
+	].map(chunk => baseUrl + chunk);
 	
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
@@ -197,7 +194,6 @@ const engine = new Engine(GODOT_CONFIG);
 					console.log('Unregistered service worker:', registration.scope);
 				}
 				
-				// Clear any caches that might interfere
 				const cacheKeys = await caches.keys();
 				for (const key of cacheKeys) {
 					await caches.delete(key);
@@ -208,7 +204,7 @@ const engine = new Engine(GODOT_CONFIG);
 		}
 	}
 	
-	// Function to download and combine pck chunks from the same origin
+	// Function to download and combine pck chunks
 	async function loadAndCombinePckChunks(chunkList) {
 		console.log(`Starting to load ${chunkList.length} pck chunks`);
 		setStatusMode('progress');
@@ -220,13 +216,11 @@ const engine = new Engine(GODOT_CONFIG);
 		
 		for (let i = 0; i < totalChunks; i++) {
 			try {
-				// Update progress
 				if (statusProgress) {
 					statusProgress.value = i;
 					statusProgress.max = totalChunks;
 				}
 				
-				// Download chunk from same origin
 				console.log(`Downloading pck chunk:`, chunkList[i]);
 				
 				const response = await fetch(chunkList[i]);
@@ -244,7 +238,6 @@ const engine = new Engine(GODOT_CONFIG);
 			}
 		}
 		
-		// Combine all chunks into a single ArrayBuffer
 		console.log(`Combining ${chunkBuffers.length} chunks into a single ArrayBuffer`);
 		const totalLength = chunkBuffers.reduce((acc, buffer) => acc + buffer.byteLength, 0);
 		const combinedBuffer = new Uint8Array(totalLength);
@@ -271,12 +264,11 @@ const engine = new Engine(GODOT_CONFIG);
 	
 	// Load the game
 	try {
-		// Clean up any service workers first
 		await cleanupServiceWorkers();
 		
 		setStatusMode('progress');
 		
-		// Load and combine pck chunks from same origin
+		// Load and combine pck chunks
 		console.log('Loading and assembling pck chunks...');
 		const combinedPckBuffer = await loadAndCombinePckChunks(pckChunks);
 		
@@ -286,9 +278,19 @@ const engine = new Engine(GODOT_CONFIG);
 		console.log("PCK Blob URL created");
 		
 		console.log("About to call engine.startGame...");
-		// Start the game with resources - using the original wasm file and combined pck
+		
+		// Load the WASM file separately
+		const wasmResponse = await fetch('./index.wasm');
+		if (!wasmResponse.ok) {
+			throw new Error(`Failed to load WASM file: ${wasmResponse.status} ${wasmResponse.statusText}`);
+		}
+		const wasmBuffer = await wasmResponse.arrayBuffer();
+		const wasmBlob = new Blob([wasmBuffer], { type: 'application/wasm' });
+		const wasmBlobUrl = URL.createObjectURL(wasmBlob);
+		
+		// Start the game with both resources
 		await engine.startGame({
-			'executable': baseUrl + 'index.wasm', // Direct path to the wasm file
+			'executable': wasmBlobUrl,
 			'mainPack': pckBlobUrl,
 			'onProgress': function(current, total) {
 				if (current > 0 && total > 0) {
@@ -300,8 +302,8 @@ const engine = new Engine(GODOT_CONFIG);
 				}
 			},
 		});
-		console.log("engine.startGame finished!");
 		
+		console.log("engine.startGame finished!");
 		setStatusMode('hidden');
 	} catch (error) {
 		displayFailureNotice(error);
