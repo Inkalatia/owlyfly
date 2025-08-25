@@ -114,18 +114,13 @@ const GODOT_CONFIG = {
     "fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
     "focusCanvas": true,
     "gdextensionLibs": [],
-    "serviceWorker": null
+    "serviceWorker": null // Ensure service worker is disabled
 };
 
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
-// Configuration: Your GitHub username, repository name and branch name
-const userName = "Inkalatia";
-const repoName = "owlyfly";
-const branch = "main";
-
-// Define pck file chunk list using GitHub RAW URLs instead of jsDelivr
+// Use relative paths for all files - no CDN, no external URLs
 const pckChunks = [
     'index.pck.part.00',
     'index.pck.part.01',
@@ -138,7 +133,7 @@ const pckChunks = [
     'index.pck.part.08',
     'index.pck.part.09',
     'index.pck.part.10'
-].map(chunk => `https://raw.githubusercontent.com/${userName}/${repoName}/${branch}/${chunk}`);
+];
 
 // Custom loading logic
 (async function() {
@@ -188,32 +183,32 @@ const pckChunks = [
         initializing = false;
     }
     
-    async function loadAndCombineChunks(chunkUrls, chunkType) {
-        console.log(`Starting to load ${chunkUrls.length} ${chunkType} chunks`);
+    async function loadAndCombineChunks(chunkList, chunkType) {
+        console.log(`Starting to load ${chunkList.length} ${chunkType} chunks`);
         setStatusMode('progress');
         statusProgress.removeAttribute('value');
         statusProgress.removeAttribute('max');
         
         const chunkBuffers = [];
         
-        for (let i = 0; i < chunkUrls.length; i++) {
+        for (let i = 0; i < chunkList.length; i++) {
             try {
                 // Update progress
                 if (statusProgress) {
                     statusProgress.value = i;
-                    statusProgress.max = chunkUrls.length;
+                    statusProgress.max = chunkList.length;
                 }
                 
-                console.log(`Downloading ${chunkType} chunk:`, chunkUrls[i]);
+                console.log(`Downloading ${chunkType} chunk:`, chunkList[i]);
                 
-                const response = await fetch(chunkUrls[i]);
+                const response = await fetch(chunkList[i]);
                 if (!response.ok) {
                     throw new Error(`Failed to download ${chunkType} chunk ${i+1}. Status: ${response.status} ${response.statusText}`);
                 }
                 
                 const buffer = await response.arrayBuffer();
                 chunkBuffers.push(buffer);
-                console.log(`Successfully downloaded ${chunkType} chunk ${i+1}/${chunkUrls.length}`);
+                console.log(`Successfully downloaded ${chunkType} chunk ${i+1}/${chunkList.length}`);
                 
             } catch (error) {
                 console.error(`Error downloading chunk ${i+1}:`, error);
@@ -236,18 +231,27 @@ const pckChunks = [
     }
 
     try {
-        setStatusMode('progress');
-        console.log('Loading and assembling pck chunks from GitHub RAW...');
+        // First, unregister any existing service workers
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+                await registration.unregister();
+                console.log('Unregistered service worker:', registration.scope);
+            }
+        }
         
-        // Only download and combine pck chunks
+        setStatusMode('progress');
+        console.log('Loading and assembling pck chunks from GitHub Pages...');
+        
+        // Download and combine pck chunks
         const pckArrayBuffer = await loadAndCombineChunks(pckChunks, 'pck');
         const pckBlob = new Blob([pckArrayBuffer], { type: 'application/octet-stream' });
         const pckBlobUrl = URL.createObjectURL(pckBlob);
 
         // Use GitHub's index.wasm directly, pass the combined pck Blob
         await engine.startGame({
-            'executable': './index.wasm', // Relative path points to the file on GitHub Pages
-            'mainPack': pckBlobUrl, // Use the combined pck Blob
+            'executable': './index.wasm',
+            'mainPack': pckBlobUrl,
             'onProgress': function(current, total) {
                 if (current > 0 && total > 0) {
                     statusProgress.value = current;
@@ -259,7 +263,7 @@ const pckChunks = [
             },
         });
         
-        URL.revokeObjectURL(pckBlobUrl); // Clean up
+        URL.revokeObjectURL(pckBlobUrl);
         setStatusMode('hidden');
     } catch (error) {
         console.error('Failed to start game:', error);
