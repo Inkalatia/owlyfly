@@ -75,6 +75,12 @@ body {
 	text-align: center;
 	z-index: 1;
 }
+
+.loading-details {
+	color: #ccc;
+	margin-top: 10px;
+	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
+}
 		</style>
 		<link id="-gd-engine-icon" rel="icon" type="image/png" href="./index.icon.png" />
 		<link rel="apple-touch-icon" href="./index.apple-touch-icon.png"/>
@@ -99,6 +105,7 @@ body {
 			<img id="status-splash" src="./index.png" alt="">
 			<progress id="status-progress"></progress>
 			<div id="status-notice"></div>
+			<div id="loading-details" class="loading-details"></div>
 		</div>
 
 		<script src="./index.js"></script>
@@ -107,13 +114,13 @@ body {
 const GODOT_CONFIG = {
 	"args": [],
 	"canvasResizePolicy": 2,
-	"ensureCrossOriginIsolationHeaders": false, // Disabled for GitHub Pages
-	"executable": "index", // Use base name without extension
+	"ensureCrossOriginIsolationHeaders": false,
+	"executable": "./index.wasm",
 	"experimentalVK": false,
 	"fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
 	"focusCanvas": true,
 	"gdextensionLibs": [],
-	"serviceWorker": null // Disable service worker for GitHub Pages
+	"serviceWorker": null
 };
 
 const GODOT_THREADS_ENABLED = false;
@@ -122,7 +129,7 @@ const engine = new Engine(GODOT_CONFIG);
 // Custom loading logic
 (async function() {
 	// Use relative paths for same-origin loading
-	const baseUrl = './'; // Load from the same directory as the HTML file
+	const baseUrl = './';
 
 	// List all pck chunks in order
 	const pckChunks = [
@@ -137,14 +144,30 @@ const engine = new Engine(GODOT_CONFIG);
 		'index.pck.part.08',
 		'index.pck.part.09',
 		'index.pck.part.10'
-	].map(chunk => baseUrl + chunk); // Prepend base URL
+	].map(chunk => baseUrl + chunk);
 	
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
 	const statusNotice = document.getElementById('status-notice');
+	const loadingDetails = document.getElementById('loading-details');
 	
 	let initializing = true;
 	let statusMode = '';
+	let totalDownloaded = 0;
+	let totalSize = 0;
+	
+	// Calculate total size of all chunks for progress reporting
+	try {
+		for (let i = 0; i < pckChunks.length; i++) {
+			const response = await fetch(pckChunks[i], {method: 'HEAD'});
+			if (response.ok) {
+				const size = parseInt(response.headers.get('Content-Length') || '0');
+				totalSize += size;
+			}
+		}
+	} catch (e) {
+		console.warn('Could not determine total file size:', e);
+	}
 	
 	function setStatusMode(mode) {
 		if (statusMode === mode || !initializing) return;
@@ -158,6 +181,7 @@ const engine = new Engine(GODOT_CONFIG);
 		statusOverlay.style.visibility = 'visible';
 		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
 		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+		loadingDetails.style.display = mode === 'progress' ? 'block' : 'none';
 		statusMode = mode;
 	}
 	
@@ -170,6 +194,21 @@ const engine = new Engine(GODOT_CONFIG);
 			statusNotice.appendChild(document.createTextNode(line));
 			statusNotice.appendChild(document.createElement('br'));
 		});
+	}
+	
+	function updateLoadingDetails(chunkName, chunkSize, totalDownloaded) {
+		if (!loadingDetails) return;
+		
+		const mbDownloaded = (totalDownloaded / (1024 * 1024)).toFixed(1);
+		const mbTotal = (totalSize / (1024 * 1024)).toFixed(1);
+		const percent = totalSize > 0 ? ((totalDownloaded / totalSize) * 100).toFixed(1) : '0';
+		
+		loadingDetails.textContent = `Loading ${chunkName} (${mbDownloaded} MB / ${mbTotal} MB, ${percent}%)`;
+		
+		if (statusProgress && totalSize > 0) {
+			statusProgress.value = totalDownloaded;
+			statusProgress.max = totalSize;
+		}
 	}
 	
 	function displayFailureNotice(err) {
@@ -218,22 +257,48 @@ const engine = new Engine(GODOT_CONFIG);
 		
 		for (let i = 0; i < totalChunks; i++) {
 			try {
-				// Update progress
-				if (statusProgress) {
-					statusProgress.value = i;
-					statusProgress.max = totalChunks;
-				}
-				
 				// Download chunk from same origin
+				const chunkName = chunkList[i].split('/').pop();
 				console.log(`Downloading pck chunk:`, chunkList[i]);
+				updateLoadingDetails(chunkName, 0, totalDownloaded);
 				
 				const response = await fetch(chunkList[i]);
 				if (!response.ok) {
 					throw new Error(`Failed to download pck chunk: ${chunkList[i]}. Status: ${response.status} ${response.statusText}`);
 				}
 				
-				const buffer = await response.arrayBuffer();
-				chunkBuffers.push(buffer);
+				// Get the content length for progress tracking
+				const contentLength = parseInt(response.headers.get('Content-Length') || '0');
+				
+				// Use a reader to track progress
+				const reader = response.body.getReader();
+				let receivedLength = 0;
+				let chunks = [];
+				
+				while(true) {
+					const {done, value} = await reader.read();
+					
+					if (done) {
+						break;
+					}
+					
+					chunks.push(value);
+					receivedLength += value.length;
+					totalDownloaded += value.length;
+					
+					// Update progress more frequently
+					updateLoadingDetails(chunkName, contentLength, totalDownloaded);
+				}
+				
+				// Combine all chunks into a single Uint8Array
+				let chunkBuffer = new Uint8Array(receivedLength);
+				let position = 0;
+				for(let chunk of chunks) {
+					chunkBuffer.set(chunk, position);
+					position += chunk.length;
+				}
+				
+				chunkBuffers.push(chunkBuffer.buffer);
 				console.log(`Successfully downloaded pck chunk ${i+1}/${totalChunks}: ${chunkList[i]}`);
 				
 			} catch (error) {
@@ -256,16 +321,6 @@ const engine = new Engine(GODOT_CONFIG);
 		return combinedBuffer.buffer;
 	}
 	
-	// Load WASM file directly
-	async function loadWasmFile() {
-		console.log('Loading WASM file...');
-		const response = await fetch('./index.wasm');
-		if (!response.ok) {
-			throw new Error(`Failed to load WASM file: ${response.status} ${response.statusText}`);
-		}
-		return await response.arrayBuffer();
-	}
-	
 	// Check for missing features first
 	const missing = Engine.getMissingFeatures({
 		threads: GODOT_THREADS_ENABLED,
@@ -283,9 +338,12 @@ const engine = new Engine(GODOT_CONFIG);
 		await cleanupServiceWorkers();
 		
 		setStatusMode('progress');
+		loadingDetails.textContent = 'Initializing...';
 		
 		// Load and combine pck chunks from same origin
 		console.log('Loading and assembling pck chunks...');
+		loadingDetails.textContent = 'Loading game data...';
+		
 		const combinedPckBuffer = await loadAndCombinePckChunks(pckChunks);
 		
 		// Create a blob from the combined buffer
@@ -293,17 +351,13 @@ const engine = new Engine(GODOT_CONFIG);
 		const pckBlobUrl = URL.createObjectURL(combinedPckBlob);
 		console.log("PCK Blob URL created");
 		
-		// Load WASM file
-		console.log('Loading WASM file...');
-		const wasmBuffer = await loadWasmFile();
-		const wasmBlob = new Blob([wasmBuffer], { type: 'application/wasm' });
-		const wasmBlobUrl = URL.createObjectURL(wasmBlob);
-		
 		console.log("About to call engine.startGame...");
-		// Start the game with resources - using blob URLs for both wasm and pck
+		loadingDetails.textContent = 'Starting game...';
+		
+		// Start the game with direct WASM path and PCK blob
 		await engine.startGame({
-			'executable': wasmBlobUrl,
-			'mainPack': pckBlobUrl,
+			'executable': './index.wasm', // Direct path to WASM file
+			'mainPack': pckBlobUrl, // Blob URL for combined PCK
 			'onProgress': function(current, total) {
 				if (current > 0 && total > 0) {
 					statusProgress.value = current;
@@ -314,8 +368,8 @@ const engine = new Engine(GODOT_CONFIG);
 				}
 			},
 		});
-		console.log("engine.startGame finished!");
 		
+		console.log("engine.startGame finished!");
 		setStatusMode('hidden');
 	} catch (error) {
 		displayFailureNotice(error);
