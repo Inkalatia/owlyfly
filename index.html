@@ -110,11 +110,16 @@ body {
 
 		<script src="./index.js"></script>
 		<script>
+// Add Cross-Origin Isolation headers for SharedArrayBuffer support
+if (window.crossOriginIsolated === false) {
+    console.warn("Cross-Origin Isolation is not enabled. SharedArrayBuffer may not be available.");
+}
+
 // Configuration for the Godot engine - optimized for GitHub Pages
 const GODOT_CONFIG = {
 	"args": [],
 	"canvasResizePolicy": 2,
-	"ensureCrossOriginIsolationHeaders": false,
+	"ensureCrossOriginIsolationHeaders": false, // We'll handle this manually
 	"executable": "./index.wasm",
 	"experimentalVK": false,
 	"fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
@@ -123,6 +128,7 @@ const GODOT_CONFIG = {
 	"serviceWorker": null
 };
 
+// Force single-threaded mode to avoid SharedArrayBuffer issues
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
@@ -372,7 +378,12 @@ const engine = new Engine(GODOT_CONFIG);
 		console.log("engine.startGame finished!");
 		setStatusMode('hidden');
 	} catch (error) {
-		displayFailureNotice(error);
+		// Handle SharedArrayBuffer error specifically
+		if (error.message.includes('SharedArrayBuffer') || error.name === 'ReferenceError') {
+			displayFailureNotice('Your browser does not support required features. Please try updating your browser or use a different browser like Chrome or Firefox.');
+		} else {
+			displayFailureNotice(error);
+		}
 	}
 })();
 		</script>
