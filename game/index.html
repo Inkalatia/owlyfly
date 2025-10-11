@@ -82,15 +82,16 @@ body {
 	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
 }
 		</style>
-		<link id="-gd-engine-icon" rel="icon" type="image/png" href="./index.icon.png" />
-		<link rel="apple-touch-icon" href="./index.apple-touch-icon.png"/>
-		<link rel="manifest" href="./index.manifest.json">
-		<style>
+		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+<link rel="manifest" href="index.manifest.json">
+<style>
 @font-face {
   font-family: "ComicSansChinese";
-  src: url("./Ldfcomicsansbold-zgma.ttf");
+  src: url("Ldfcomicsansbold-zgma.ttf");
 }
-		</style>
+</style>
+<link rel="stylesheet" href="custom.css">
 	</head>
 	<body>
 		<canvas id="canvas">
@@ -102,56 +103,45 @@ body {
 		</noscript>
 
 		<div id="status">
-			<img id="status-splash" src="./index.png" alt="">
+			<img id="status-splash" src="index.png" alt="">
 			<progress id="status-progress"></progress>
 			<div id="status-notice"></div>
 			<div id="loading-details" class="loading-details"></div>
 		</div>
 
-		<script src="./index.js"></script>
+		<script src="index.js"></script>
 		<script>
-// Add Cross-Origin Isolation headers for SharedArrayBuffer support
-if (window.crossOriginIsolated === false) {
-    console.warn("Cross-Origin Isolation is not enabled. SharedArrayBuffer may not be available.");
-}
-
-// Configuration for the Godot engine - optimized for GitHub Pages
+// Configuration for the Godot engine - updated with manual loading settings
 const GODOT_CONFIG = {
 	"args": [],
 	"canvasResizePolicy": 2,
-	"ensureCrossOriginIsolationHeaders": false, // We'll handle this manually
-	"executable": "./index.wasm",
+	"ensureCrossOriginIsolationHeaders": false, // We'll handle loading manually
+	"executable": "index",
 	"experimentalVK": false,
-	"fileSizes": {"index.pck": 203326128, "index.wasm": 33829596},
+	"fileSizes": {"index.pck": 207227392, "index.wasm": 35376909},
 	"focusCanvas": true,
 	"gdextensionLibs": [],
-	"serviceWorker": null
+	"serviceWorker": null // Disable service worker for manual loading
 };
-
-// Force single-threaded mode to avoid SharedArrayBuffer issues
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
-// Custom loading logic
-(async function() {
-	// Use relative paths for same-origin loading
-	const baseUrl = './';
+// List all pck chunks in order (11 parts as before)
+const pckChunks = [
+	'index.pck.part.00',
+	'index.pck.part.01',
+	'index.pck.part.02',
+	'index.pck.part.03',
+	'index.pck.part.04',
+	'index.pck.part.05',
+	'index.pck.part.06',
+	'index.pck.part.07',
+	'index.pck.part.08',
+	'index.pck.part.09',
+	'index.pck.part.10'
+];
 
-	// List all pck chunks in order
-	const pckChunks = [
-		'index.pck.part.00',
-		'index.pck.part.01',
-		'index.pck.part.02',
-		'index.pck.part.03',
-		'index.pck.part.04',
-		'index.pck.part.05',
-		'index.pck.part.06',
-		'index.pck.part.07',
-		'index.pck.part.08',
-		'index.pck.part.09',
-		'index.pck.part.10'
-	].map(chunk => baseUrl + chunk);
-	
+(async function () {
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
 	const statusNotice = document.getElementById('status-notice');
@@ -162,28 +152,16 @@ const engine = new Engine(GODOT_CONFIG);
 	let totalDownloaded = 0;
 	let totalSize = 0;
 	
-	// Calculate total size of all chunks for progress reporting
-	try {
-		for (let i = 0; i < pckChunks.length; i++) {
-			const response = await fetch(pckChunks[i], {method: 'HEAD'});
-			if (response.ok) {
-				const size = parseInt(response.headers.get('Content-Length') || '0');
-				totalSize += size;
-			}
-		}
-	} catch (e) {
-		console.warn('Could not determine total file size:', e);
-	}
-	
+	// Function to set the status display mode
 	function setStatusMode(mode) {
-		if (statusMode === mode || !initializing) return;
-		
+		if (statusMode === mode || !initializing) {
+			return;
+		}
 		if (mode === 'hidden') {
 			statusOverlay.remove();
 			initializing = false;
 			return;
 		}
-		
 		statusOverlay.style.visibility = 'visible';
 		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
 		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
@@ -191,6 +169,7 @@ const engine = new Engine(GODOT_CONFIG);
 		statusMode = mode;
 	}
 	
+	// Function to display status/error messages
 	function setStatusNotice(text) {
 		while (statusNotice.lastChild) {
 			statusNotice.removeChild(statusNotice.lastChild);
@@ -202,6 +181,7 @@ const engine = new Engine(GODOT_CONFIG);
 		});
 	}
 	
+	// Function to update loading progress details
 	function updateLoadingDetails(chunkName, chunkSize, totalDownloaded) {
 		if (!loadingDetails) return;
 		
@@ -217,6 +197,7 @@ const engine = new Engine(GODOT_CONFIG);
 		}
 	}
 	
+	// Function to display error messages
 	function displayFailureNotice(err) {
 		console.error(err);
 		if (err instanceof Error) {
@@ -230,28 +211,23 @@ const engine = new Engine(GODOT_CONFIG);
 		initializing = false;
 	}
 	
-	// Clean up any existing service workers
-	async function cleanupServiceWorkers() {
-		if ('serviceWorker' in navigator) {
-			try {
-				const registrations = await navigator.serviceWorker.getRegistrations();
-				for (const registration of registrations) {
-					await registration.unregister();
-					console.log('Unregistered service worker:', registration.scope);
-				}
-				
-				// Clear any caches that might interfere
-				const cacheKeys = await caches.keys();
-				for (const key of cacheKeys) {
-					await caches.delete(key);
-				}
-			} catch (error) {
-				console.warn('Service worker cleanup error:', error);
+	// Calculate total size of all chunks for progress reporting
+	try {
+		// First try to get sizes via HEAD requests
+		for (let i = 0; i < pckChunks.length; i++) {
+			const response = await fetch(pckChunks[i], {method: 'HEAD'});
+			if (response.ok) {
+				const size = parseInt(response.headers.get('Content-Length') || '0');
+				totalSize += size;
 			}
 		}
+	} catch (e) {
+		console.warn('Could not determine total file size via HEAD requests, using configured size:', e);
+		// Fall back to the configured PCK size if HEAD requests fail
+		totalSize = GODOT_CONFIG.fileSizes['index.pck'];
 	}
 	
-	// Function to download and combine pck chunks from the same origin
+	// Function to download and combine pck chunks
 	async function loadAndCombinePckChunks(chunkList) {
 		console.log(`Starting to load ${chunkList.length} pck chunks`);
 		setStatusMode('progress');
@@ -263,8 +239,8 @@ const engine = new Engine(GODOT_CONFIG);
 		
 		for (let i = 0; i < totalChunks; i++) {
 			try {
-				// Download chunk from same origin
-				const chunkName = chunkList[i].split('/').pop();
+				// Download chunk
+				const chunkName = chunkList[i];
 				console.log(`Downloading pck chunk:`, chunkList[i]);
 				updateLoadingDetails(chunkName, 0, totalDownloaded);
 				
@@ -327,6 +303,27 @@ const engine = new Engine(GODOT_CONFIG);
 		return combinedBuffer.buffer;
 	}
 	
+	// Clean up any existing service workers
+	async function cleanupServiceWorkers() {
+		if ('serviceWorker' in navigator) {
+			try {
+				const registrations = await navigator.serviceWorker.getRegistrations();
+				for (const registration of registrations) {
+					await registration.unregister();
+					console.log('Unregistered service worker:', registration.scope);
+				}
+				
+				// Clear any caches that might interfere
+				const cacheKeys = await caches.keys();
+				for (const key of cacheKeys) {
+					await caches.delete(key);
+				}
+			} catch (error) {
+				console.warn('Service worker cleanup error:', error);
+			}
+		}
+	}
+	
 	// Check for missing features first
 	const missing = Engine.getMissingFeatures({
 		threads: GODOT_THREADS_ENABLED,
@@ -344,11 +341,11 @@ const engine = new Engine(GODOT_CONFIG);
 		await cleanupServiceWorkers();
 		
 		setStatusMode('progress');
-		loadingDetails.textContent = 'Initializing...';
+		if (loadingDetails) loadingDetails.textContent = 'Initializing...';
 		
-		// Load and combine pck chunks from same origin
+		// Load and combine pck chunks
 		console.log('Loading and assembling pck chunks...');
-		loadingDetails.textContent = 'Loading game data...';
+		if (loadingDetails) loadingDetails.textContent = 'Loading game data...';
 		
 		const combinedPckBuffer = await loadAndCombinePckChunks(pckChunks);
 		
@@ -358,12 +355,11 @@ const engine = new Engine(GODOT_CONFIG);
 		console.log("PCK Blob URL created");
 		
 		console.log("About to call engine.startGame...");
-		loadingDetails.textContent = 'Starting game...';
+		if (loadingDetails) loadingDetails.textContent = 'Starting game...';
 		
-		// Start the game with direct WASM path and PCK blob
+		// Start the game with the combined PCK blob
 		await engine.startGame({
-			'executable': './index.wasm', // Direct path to WASM file
-			'mainPack': pckBlobUrl, // Blob URL for combined PCK
+			'mainPack': pckBlobUrl, // Use the blob URL for combined PCK
 			'onProgress': function(current, total) {
 				if (current > 0 && total > 0) {
 					statusProgress.value = current;
@@ -385,7 +381,7 @@ const engine = new Engine(GODOT_CONFIG);
 			displayFailureNotice(error);
 		}
 	}
-})();
+}());
 		</script>
 	</body>
 </html>

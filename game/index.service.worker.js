@@ -4,7 +4,7 @@
 // Incrementing CACHE_VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
 /** @type {string} */
-const CACHE_VERSION = '1756137306|69409757991';
+const CACHE_VERSION = '1758613137|1096917832716';
 /** @type {string} */
 const CACHE_PREFIX = 'Owly Fly!-sw-cache-';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
