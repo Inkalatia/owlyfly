@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OwlyFly - ESL/EFL Educational Game</title>
-    <meta name="description" content="OwlyFly - The ultimate ESL/EFL educational game for classrooms and home learning. Engage students with customizable English learning games.">
+    <title>OwlyFly - ESL/EFL 互动学习工具</title>
+    <meta name="description" content="OwlyFly - 免费的ESL/EFL互动学习工具，适合课堂和家庭英语学习。">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -368,6 +368,18 @@
     .display-4:hover {
         transform: translateY(-5px);
     }
+
+    /* Added banner style */
+    .safety-banner {
+        background: rgba(255, 255, 255, 0.15);
+        border-left: 4px solid #ffd700;
+        padding: 10px 20px;
+        border-radius: 5px;
+        margin-bottom: 25px;
+        font-weight: 500;
+        color: #fff;
+        backdrop-filter: blur(2px);
+    }
 </style>
 </head>
 <body>
@@ -405,13 +417,13 @@
                         <a class="nav-link" href="#screenshots"><span class="lang-cn">截图</span><span class="lang-en">Screenshots</span></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#play"><span class="lang-cn">玩游戏</span><span class="lang-en">Play</span></a>
+                        <a class="nav-link" href="#play"><span class="lang-cn">在线体验</span><span class="lang-en">Play</span></a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#downloads"><span class="lang-cn">下载</span><span class="lang-en">Downloads</span></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#donate"><span class="lang-cn">捐赠</span><span class="lang-en">Donate</span></a>
+                        <a class="nav-link" href="#donate"><span class="lang-cn">支持</span><span class="lang-en">Support</span></a>
                     </li>
                 </ul>
             </div>
@@ -423,9 +435,15 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6">
-                    <h1 class="display-4 fw-bold"><span class="lang-cn">OwlyFly ESL/EFL 教育游戏</span><span class="lang-en">OwlyFly ESL/EFL Educational Game</span></h1>
+                    <!-- Added safety banner -->
+                    <div class="safety-banner">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        <span class="lang-cn">本网站为免费教育资源，专为英语课堂设计，无任何商业或违法内容。</span>
+                        <span class="lang-en">This is a free educational resource for English classrooms, with no commercial or illegal content.</span>
+                    </div>
+                    <h1 class="display-4 fw-bold"><span class="lang-cn">OwlyFly ESL/EFL 互动学习工具</span><span class="lang-en">OwlyFly ESL/EFL Interactive Learning Tool</span></h1>
                     <p class="lead"><span class="lang-cn">专为课堂和家庭英语学习设计的互动学习冒险</span><span class="lang-en">An interactive learning adventure for classroom and home English study</span></p>
-                    <a href="#play" class="btn btn-light btn-lg me-3"><span class="lang-cn">立即游玩</span><span class="lang-en">Play Now</span></a>
+                    <a href="#play" class="btn btn-light btn-lg me-3"><span class="lang-cn">立即体验</span><span class="lang-en">Try Now</span></a>
                     <a href="#downloads" class="btn btn-outline-light btn-lg"><span class="lang-cn">下载</span><span class="lang-en">Download</span></a>
                 </div>
                 <div class="col-lg-6">
@@ -441,7 +459,7 @@
             <div class="row">
                 <div class="col-lg-10 mx-auto">
                     <h2 class="mb-4"><span class="lang-cn">革命性的ESL/EFL英语学习方式</span><span class="lang-en">Revolutionary ESL/EFL English Learning Method</span></h2>
-                    <p class="lead"><span class="lang-cn">OwlyFly将英语学习转变为有趣的游戏体验，专为年轻学习者和教师设计。通过多种游戏模式、完全可定制的课程和数字能力培养，让学习英语变得前所未有的高效和愉快。</span><span class="lang-en">OwlyFly transforms English learning into a fun game experience, designed for young ESL/EFL learners and teachers. With multiple game modes, fully customizable lessons, and digital competence development, learning English has never been more efficient and enjoyable.</span></p>
+                    <p class="lead"><span class="lang-cn">OwlyFly将英语学习转变为有趣的互动体验，专为年轻学习者和教师设计。通过多种学习模式、完全可定制的课程和数字能力培养，让学习英语变得前所未有的高效和愉快。</span><span class="lang-en">OwlyFly transforms English learning into a fun interactive experience, designed for young ESL/EFL learners and teachers. With multiple learning modes, fully customizable lessons, and digital competence development, learning English has never been more efficient and enjoyable.</span></p>
                 </div>
             </div>
         </div>
@@ -469,8 +487,8 @@
                 <div class="col-md-4 mb-4">
                     <div class="benefit-card">
                         <div class="benefit-icon"><i class="fas fa-gamepad"></i></div>
-                        <h4><span class="lang-cn">游戏化学习</span><span class="lang-en">Gamified Learning</span></h4>
-                        <p><span class="lang-cn">通过游戏机制激发学习动机，让英语学习充满乐趣</span><span class="lang-en">Motivate learning through game mechanics that make English study fun</span></p>
+                        <h4><span class="lang-cn">互动学习</span><span class="lang-en">Interactive Learning</span></h4>
+                        <p><span class="lang-cn">通过互动机制激发学习动机，让英语学习充满乐趣</span><span class="lang-en">Motivate learning through interactive mechanics that make English study fun</span></p>
                     </div>
                 </div>
             </div>
@@ -483,15 +501,15 @@
             <h2 class="text-center section-title"><span class="lang-cn">关于 OwlyFly</span><span class="lang-en">About OwlyFly</span></h2>
             <div class="row">
                 <div class="col-md-6">
-                    <p class="lead"><span class="lang-cn">OwlyFly是一款专为ESL/EFL课堂使用而设计的教育游戏，适用于各种触摸屏设备，包括智能屏幕、Android平板电脑和Windows系统。</span><span class="lang-en">OwlyFly is an educational game designed for ESL/EFL classroom use on various touchscreen devices, including smart screens, Android tablets, and Windows systems.</span></p>
-                    <p><span class="lang-cn">该游戏通过引人入胜的游戏机制帮助学生培养英语技能、批判性思维和解决问题的能力，教师可以轻松将其融入课程计划。学生还可以在家中继续学习，巩固课堂知识。</span><span class="lang-en">The game helps students develop English skills, critical thinking, and problem-solving abilities through engaging gameplay that teachers can easily incorporate into lesson plans. Students can continue learning at home to reinforce classroom knowledge.</span></p>
+                    <p class="lead"><span class="lang-cn">OwlyFly是一款专为ESL/EFL课堂使用而设计的教育学习工具，适用于各种触摸屏设备，包括智能屏幕、Android平板电脑和Windows系统。</span><span class="lang-en">OwlyFly is an educational learning tool designed for ESL/EFL classroom use on various touchscreen devices, including smart screens, Android tablets, and Windows systems.</span></p>
+                    <p><span class="lang-cn">该工具通过引人入胜的互动机制帮助学生培养英语技能、批判性思维和解决问题的能力，教师可以轻松将其融入课程计划。学生还可以在家中继续学习，巩固课堂知识。</span><span class="lang-en">The tool helps students develop English skills, critical thinking, and problem-solving abilities through engaging interactive mechanics that teachers can easily incorporate into lesson plans. Students can continue learning at home to reinforce classroom knowledge.</span></p>
                     
                     <div class="row mt-5">
                         <div class="col-md-6 mb-4">
                             <div class="feature-box">
                                 <div class="feature-icon"><i class="fas fa-gamepad"></i></div>
-                                <h4><span class="lang-cn">多种游戏模式</span><span class="lang-en">Multiple Game Modes</span></h4>
-                                <p><span class="lang-cn">提供多种不同的游戏方式，保持学习新鲜感</span><span class="lang-en">Various ways to play, keeping learning fresh</span></p>
+                                <h4><span class="lang-cn">多种学习模式</span><span class="lang-en">Multiple Learning Modes</span></h4>
+                                <p><span class="lang-cn">提供多种不同的学习方式，保持学习新鲜感</span><span class="lang-en">Various ways to learn, keeping study fresh</span></p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4">
@@ -512,7 +530,7 @@
                             <div class="feature-box">
                                 <div class="feature-icon"><i class="fas fa-graduation-cap"></i></div>
                                 <h4><span class="lang-cn">课程整合</span><span class="lang-en">Curriculum Integration</span></h4>
-                                <p><span class="lang-cn">将学校课程直接整合到游戏中</span><span class="lang-en">Integrate school curriculum directly into the game</span></p>
+                                <p><span class="lang-cn">将学校课程直接整合到学习工具中</span><span class="lang-en">Integrate school curriculum directly into the learning tool</span></p>
                                 <p class="mt-2"><small><span class="lang-cn">联系我们获取更多信息！</span><span class="lang-en">Contact us for more information!</span></small></p>
                             </div>
                         </div>
@@ -529,7 +547,7 @@
                         <img src="https://user10844.na.imgto.link/public/20260511/screenshot7.avif" alt="游戏截图 7 / Game Screenshot 7" class="game-screenshot">
                         <img src="https://user10844.na.imgto.link/public/20260511/screenshot8.avif" alt="游戏截图 8 / Game Screenshot 8" class="game-screenshot">
                     </div>
-                    <p class="screenshot-caption"><span class="lang-cn">OwlyFly游戏的各种功能和界面</span><span class="lang-en">Various features and interfaces of OwlyFly game</span></p>
+                    <p class="screenshot-caption"><span class="lang-cn">OwlyFly的各种功能和界面</span><span class="lang-en">Various features and interfaces of OwlyFly</span></p>
                 </div>
             </div>
             
@@ -559,7 +577,7 @@
         <!-- Screenshots Section -->
     <section id="screenshots" class="game-section bg-light">
         <div class="container">
-            <h2 class="text-center section-title"><span class="lang-cn">游戏截图</span><span class="lang-en">Game Screenshots</span></h2>
+            <h2 class="text-center section-title"><span class="lang-cn">功能截图</span><span class="lang-en">Feature Screenshots</span></h2>
             
             <div class="screenshots-grid">
                 <!-- Screenshot 9 -->
@@ -593,8 +611,8 @@
                 <div class="screenshot-container">
                     <div class="screenshot-image" style="background-image: url('https://user10844.na.imgto.link/public/20260511/screenshot12.avif');"></div>
                     <div class="screenshot-container-caption">
-                        <span class="lang-cn">3D游戏边学边玩</span>
-                        <span class="lang-en">3D game to learn and play</span>
+                        <span class="lang-cn">3D互动学习</span>
+                        <span class="lang-en">3D interactive learning</span>
                     </div>
                 </div>
                 
@@ -622,11 +640,11 @@
     <!-- Play Game Section -->
     <section id="play" class="game-section">
         <div class="container">
-            <h2 class="text-center section-title"><span class="lang-cn">立即玩 OwlyFly</span><span class="lang-en">Play OwlyFly Now</span></h2>
+            <h2 class="text-center section-title"><span class="lang-cn">立即体验 OwlyFly</span><span class="lang-en">Try OwlyFly Now</span></h2>
             <div class="row justify-content-center">
                 <div class="col-lg-8 text-center">
-                    <p class="lead mb-4"><span class="lang-cn">直接在浏览器中游玩 - 无需下载！游戏加载时间不到20秒，非常适合课堂使用和家庭学习。</span><span class="lang-en">Play directly in your browser - no downloads required! The game loads in under 20 seconds, making it perfect for classroom sessions and home learning.</span></p>
-                    <a href="https://inkalatia.itch.io/owlyflychina" class="btn btn-primary btn-lg"><span class="lang-cn">立即游玩</span><span class="lang-en">Play Now</span></a>
+                    <p class="lead mb-4"><span class="lang-cn">直接在浏览器中体验 - 无需下载！加载时间不到20秒，非常适合课堂使用和家庭学习。</span><span class="lang-en">Try directly in your browser - no downloads required! Loads in under 20 seconds, perfect for classroom sessions and home learning.</span></p>
+                    <a href="https://inkalatia.itch.io/owlyflychina" class="btn btn-primary btn-lg"><span class="lang-cn">立即体验</span><span class="lang-en">Try Now</span></a>
                     <p class="mt-3"><small><span class="lang-cn">支持Windows、Android、iOS和任何现代浏览器</span><span class="lang-en">Works on Windows, Android, iOS, and any modern browser</span></small></p>
                 </div>
             </div>
@@ -636,19 +654,19 @@
     <!-- Downloads Section -->
     <section id="downloads" class="downloads-section">
         <div class="container">
-            <h2 class="text-center section-title"><span class="lang-cn">下载 OwlyFly</span><span class="lang-en">Download OwlyFly</span></h2>
+            <h2 class="text-center section-title"><span class="lang-cn">下载与安装</span><span class="lang-en">Download & Install</span></h2>
             <div class="row justify-content-center">
                 <div class="col-md-4 text-center mb-5">
                     <div class="feature-box">
                         <h3>Android APK</h3>
-                        <p><span class="lang-cn">在Android设备上安装以进行离线游戏</span><span class="lang-en">Install on Android devices for offline play</span></p>
+                        <p><span class="lang-cn">在Android设备上安装以进行离线学习</span><span class="lang-en">Install on Android devices for offline learning</span></p>
                         <a href="https://buzzheavier.com/38ezv3233j67" class="btn btn-download"><span class="lang-cn">下载 APK</span><span class="lang-en">Download APK</span></a>
                     </div>
                 </div>
                 <div class="col-md-4 text-center mb-5">
                     <div class="feature-box">
                         <h3>Windows EXE</h3>
-                        <p><span class="lang-cn">Windows桌面版本，支持离线游戏</span><span class="lang-en">Windows desktop version for offline play</span></p>
+                        <p><span class="lang-cn">Windows桌面版本，支持离线学习</span><span class="lang-en">Windows desktop version for offline learning</span></p>
                         <a href="https://buzzheavier.com/hsllyrry76ov" class="btn btn-download"><span class="lang-cn">下载 EXE</span><span class="lang-en">Download EXE</span></a>
                     </div>
                 </div>
@@ -664,32 +682,32 @@
                             <span class="badge bg-secondary m-2 p-2">阿里应用商店</span>
                             <span class="badge bg-secondary m-2 p-2">iOS应用商店</span>
                         </div>
-                        <p class="text-center mt-3"><span class="lang-cn">您的捐赠将帮助我们支付中国的商业注册和发布费用。</span><span class="lang-en">Your donations will help us cover the business registration and publishing costs in China.</span></p>
+                        <p class="text-center mt-3"><span class="lang-cn">您的支持将帮助我们支付中国的商业注册和发布费用。</span><span class="lang-en">Your support will help us cover the business registration and publishing costs in China.</span></p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Donate Section -->
+    <!-- Donate Section (renamed to Support) -->
     <section id="donate" class="donate-section">
         <div class="container">
             <h2 class="text-center section-title"><span class="lang-cn">支持 OwlyFly</span><span class="lang-en">Support OwlyFly</span></h2>
             <div class="row align-items-center">
                 <div class="col-md-6 text-center">
                     <h3><span class="lang-cn">帮助我们成长</span><span class="lang-en">Help Us Grow</span></h3>
-                    <p><span class="lang-cn">您的捐赠将帮助我们：</span><span class="lang-en">Your donations will help us:</span></p>
+                    <p><span class="lang-cn">您的支持将帮助我们：</span><span class="lang-en">Your support will help us:</span></p>
                     <ul class="list-unstyled">
                         <li>✓ <span class="lang-cn">在中国注册公司</span><span class="lang-en">Register the company in China</span></li>
                         <li>✓ <span class="lang-cn">在官方应用商店发布</span><span class="lang-en">Publish on official app stores</span></li>
                         <li>✓ <span class="lang-cn">支付更好的服务器费用</span><span class="lang-en">Pay for better servers</span></li>
                         <li>✓ <span class="lang-cn">开发新的教育功能</span><span class="lang-en">Develop new educational features</span></li>
-                        <li>✓ <span class="lang-cn">创建更多学习游戏</span><span class="lang-en">Create more learning games</span></li>
+                        <li>✓ <span class="lang-cn">创建更多学习工具</span><span class="lang-en">Create more learning tools</span></li>
                     </ul>
-                    <p class="mt-4"><span class="lang-cn">使用微信扫描二维码捐赠：</span><span class="lang-en">Scan the QR code with WeChat to donate:</span></p>
+                    <p class="mt-4"><span class="lang-cn">使用微信扫描二维码支持我们：</span><span class="lang-en">Scan the QR code with WeChat to support us:</span></p>
                 </div>
                 <div class="col-md-6 text-center">
-                    <img src="https://user10844.na.imgto.link/public/20260511/qr-donation.avif" alt="微信捐赠二维码 / WeChat Donation QR Code" class="qr-code img-fluid">
+                    <img src="https://user10844.na.imgto.link/public/20260511/qr-donation.avif" alt="微信支持二维码 / WeChat Support QR Code" class="qr-code img-fluid">
                     <p class="mt-3"><span class="lang-cn">感谢您的支持！ 🦉</span><span class="lang-en">Thank you for your support! 🦉</span></p>
                 </div>
             </div>
@@ -702,7 +720,7 @@
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <h5>OwlyFly</h5>
-                    <p><span class="lang-cn">面向现代课堂的ESL/EFL教育游戏</span><span class="lang-en">ESL/EFL educational games for modern classrooms</span></p>
+                    <p><span class="lang-cn">面向现代课堂的ESL/EFL教育学习工具</span><span class="lang-en">ESL/EFL educational learning tools for modern classrooms</span></p>
                 </div>
                 <div class="col-md-4 mb-3">
                     <h5><span class="lang-cn">链接</span><span class="lang-en">Links</span></h5>
@@ -711,9 +729,9 @@
                         <li><a href="#about" class="text-white"><span class="lang-cn">关于</span><span class="lang-en">About</span></a></li>
                         <li><a href="#features" class="text-white"><span class="lang-cn">特点</span><span class="lang-en">Features</span></a></li>
                         <li><a href="#screenshots" class="text-white"><span class="lang-cn">截图</span><span class="lang-en">Screenshots</span></a></li>
-                        <li><a href="#play" class="text-white"><span class="lang-cn">玩游戏</span><span class="lang-en">Play</span></a></li>
+                        <li><a href="#play" class="text-white"><span class="lang-cn">在线体验</span><span class="lang-en">Play</span></a></li>
                         <li><a href="#downloads" class="text-white"><span class="lang-cn">下载</span><span class="lang-en">Downloads</span></a></li>
-                        <li><a href="#donate" class="text-white"><span class="lang-cn">捐赠</span><span class="lang-en">Donate</span></a></li>
+                        <li><a href="#donate" class="text-white"><span class="lang-cn">支持</span><span class="lang-en">Support</span></a></li>
                     </ul>
                 </div>
                 <div class="col-md-4 mb-3">
@@ -727,7 +745,7 @@
                 </div>
             </div>
             <hr class="bg-light">
-            <p>&copy; 2025 <span class="lang-cn">OwlyFly 教育游戏。保留所有权利。</span><span class="lang-en">OwlyFly Educational Game. All rights reserved.</span></p>
+            <p>&copy; 2025 <span class="lang-cn">OwlyFly 教育学习工具。保留所有权利。</span><span class="lang-en">OwlyFly Educational Learning Tool. All rights reserved.</span></p>
             
             <!-- Language fallback in footer -->
             <div class="container mt-3 text-center">
